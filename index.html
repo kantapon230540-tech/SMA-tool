@@ -1525,30 +1525,47 @@ async function submitToSheets(){
   statusEl.style.color = '#666';
 
   try {
-    // Send as FormData — no-cors mode strips JSON body but carries FormData correctly
+    console.log('=== SMA SUBMIT DEBUG ===');
+    console.log('URL:', APPS_SCRIPT_URL);
+    console.log('Site:', site);
+    console.log('Payload size:', JSON.stringify(payload).length, 'chars');
+
+    // Step 1: Test GET first to confirm URL is reachable
+    console.log('Step 1: Testing GET...');
+    const getRes = await fetch(APPS_SCRIPT_URL, { method: 'GET', mode: 'no-cors' });
+    console.log('GET done (opaque ok):', getRes.type);
+
+    // Step 2: POST with FormData
+    console.log('Step 2: Sending POST...');
     const formData = new FormData();
     formData.append('data', JSON.stringify(payload));
 
-    await fetch(APPS_SCRIPT_URL, {
+    const postRes = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       body: formData
     });
+    console.log('POST done:', postRes.type, postRes.status);
+    console.log('=== SUBMIT COMPLETE ===');
+    console.log('If Google Sheet is still empty, the issue is in Apps Script deployment settings.');
+    console.log('Check: Deploy > Manage deployments > Who has access = Anyone (not Anyone with Google account)');
 
-    // no-cors gives opaque response — no JS error = request reached server
     if(statusEl){
-      statusEl.textContent = `✓ Submitted — ${site} (${new Date().toLocaleTimeString()})`;
+      statusEl.textContent = `✓ Request sent — ${site} (${new Date().toLocaleTimeString()}) — check F12 console for details`;
       statusEl.style.color = '#27ae60';
     }
-    showFlash(`✓ ${site} submitted to Google Sheets`);
+    showFlash(`✓ Request sent to Apps Script`);
 
   } catch(err) {
+    console.error('=== SUBMIT ERROR ===');
+    console.error('Error type:', err.name);
+    console.error('Error message:', err.message);
+    console.error('Full error:', err);
     if(statusEl){
-      statusEl.textContent = `✗ Failed: ${err.message}`;
+      statusEl.textContent = `✗ Error: ${err.message}`;
       statusEl.style.color = '#e31837';
     }
-    console.error('Submit error:', err);
-    alert('Submission failed: ' + err.message + '\n\nCheck Apps Script URL and deployment settings.');
+    alert('Error: ' + err.name + ': ' + err.message);
   }
 }
 
