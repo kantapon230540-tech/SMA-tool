@@ -447,7 +447,8 @@ const QUESTIONS = [
 // ═══════════════════════════════════════════════════════════
 // CONFIGURATION — Set your Apps Script URL here
 // ═══════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyv__bj0VC16h5mc7Qy04vzRrQiPTvsATWgAAOaHUwcoJZIO7kNtobHeBpmqkMCEtHWSg/exec'; // 
+const APPS_SCRIPT_URL = ''; // ← Paste your deployed Apps Script URL here
+
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
@@ -1524,16 +1525,19 @@ async function submitToSheets(){
   statusEl.style.color = '#666';
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    // Send as FormData — no-cors mode strips JSON body but carries FormData correctly
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(payload));
+
+    await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors', // Apps Script requires no-cors
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
+      mode: 'no-cors',
+      body: formData
     });
 
-    // no-cors returns opaque response — if no error thrown, assume success
+    // no-cors gives opaque response — no JS error = request reached server
     if(statusEl){
-      statusEl.textContent = `✓ Submitted successfully — ${site} (${new Date().toLocaleTimeString()})`;
+      statusEl.textContent = `✓ Submitted — ${site} (${new Date().toLocaleTimeString()})`;
       statusEl.style.color = '#27ae60';
     }
     showFlash(`✓ ${site} submitted to Google Sheets`);
@@ -1544,7 +1548,7 @@ async function submitToSheets(){
       statusEl.style.color = '#e31837';
     }
     console.error('Submit error:', err);
-    alert('Submission failed: ' + err.message + '\n\nCheck that your Apps Script URL is correct and the Web App is deployed as "Anyone can access".');
+    alert('Submission failed: ' + err.message + '\n\nCheck Apps Script URL and deployment settings.');
   }
 }
 
